@@ -1,0 +1,38 @@
+apply plugin: 'com.android.application'
+apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-android-extensions'
+
+apply(from: "../shared_build.gradle")
+
+android {
+    defaultConfig {
+        applicationId = "io.github.achmadhafid.sample_app"
+    }
+    buildTypes {
+        debug {
+            shrinkResources false
+            minifyEnabled false
+        }
+        release {
+            crunchPngs false
+            shrinkResources false
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+dependencies {
+    implementation project(":firestore-view-model")
+
+    implementation deps.material
+    implementation deps.constraint_layout
+
+    implementation deps.gps_auth
+    implementation deps.firebase_auth_view_model
+
+    implementation deps.simple_pref
+    implementation deps.lottie_dialog
+}
+
+apply plugin: 'com.google.gms.google-services'

@@ -1,0 +1,45 @@
+buildscript {
+    apply from: 'versions.gradle'
+    repositories {
+        google()
+        mavenCentral()
+        jcenter()
+    }
+    dependencies {
+        classpath plugin.agp
+        classpath plugin.kotlin
+        classpath plugin.google_play_services
+    }
+}
+
+plugins {
+    id "com.github.dcendents.android-maven" version "2.1"
+    id "com.github.ben-manes.versions" version "0.25.0"
+    id "io.gitlab.arturbosch.detekt" version "1.0.1"
+}
+
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+        jcenter()
+        maven { url 'https://jitpack.io' }
+    }
+}
+
+subprojects {
+    tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
+        kotlinOptions {
+            jvmTarget = '1.8'
+            allWarningsAsErrors = true
+        }
+    }
+}
+
+detekt {
+    toolVersion = versions.detekt
+    input = files("$projectDir")
+    config = files("$project.rootDir/detekt-config.yml")
+    filters = ".*test.*,.*/resources/.*,.*/tmp/.*"
+    parallel = true
+}
