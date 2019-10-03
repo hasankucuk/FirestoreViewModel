@@ -13,6 +13,8 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.MetadataChanges
+import com.google.firebase.firestore.ktx.firestore
+import com.google.firebase.ktx.Firebase
 import io.github.achmadhafid.firestore_view_model.read.ReadDocumentConfig
 import io.github.achmadhafid.firestore_view_model.read.ReadDocumentEvent
 import io.github.achmadhafid.firestore_view_model.read.ReadDocumentException
@@ -37,6 +39,10 @@ class FirestoreViewModel
 internal constructor(
     application: Application
 ) : AndroidViewModel(application), FirebaseAuth.AuthStateListener {
+
+    private val firestore by lazy {
+        Firebase.firestore
+    }
 
     init {
         auth.addAuthStateListener(this)
