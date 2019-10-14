@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    tools:ignore="MissingConstraints">
+
+    <androidx.constraintlayout.helper.widget.Flow
+        android:layout_width="@dimen/match_constraint"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="@dimen/large"
+        app:constraint_referenced_ids="sw_require_auth,sw_require_online,layout_sync_wait"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <com.google.android.material.switchmaterial.SwitchMaterial
+        android:id="@+id/sw_require_auth"
+        android:layout_width="@dimen/match_constraint"
+        android:layout_height="wrap_content"
+        android:checked="false"
+        android:text="Require Auth"
+        android:textAppearance="@style/TextAppearance.MaterialComponents.Subtitle2"
+        android:textSize="@dimen/text_small"
+        app:switchPadding="@dimen/medium_fit" />
+
+    <com.google.android.material.switchmaterial.SwitchMaterial
+        android:id="@+id/sw_require_online"
+        android:layout_width="@dimen/match_constraint"
+        android:layout_height="wrap_content"
+        android:checked="false"
+        android:text="Require Online"
+        android:textAppearance="@style/TextAppearance.MaterialComponents.Subtitle2"
+        android:textSize="@dimen/text_small"
+        app:switchPadding="@dimen/medium_fit" />
+
+    <FrameLayout
+        android:id="@+id/layout_sync_wait"
+        android:layout_width="@dimen/match_constraint"
+        android:layout_height="wrap_content">
+
+        <TextView
+            android:id="@+id/tv_sync_wait"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/medium"
+            android:text="Sync Wait"
+            android:textAppearance="@style/TextAppearance.MaterialComponents.Subtitle2"
+            android:textSize="@dimen/text_small" />
+
+        <com.ramotion.fluidslider.FluidSlider
+            android:id="@+id/sb_sync_wait"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:duration="400"
+            app:end_text=""
+            app:size="small"
+            app:start_text=""
+            app:text_size="@dimen/text_small" />
+
+    </FrameLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

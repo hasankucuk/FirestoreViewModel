@@ -8,6 +8,7 @@ data class User(
 
     @get:Exclude
     var id: String = "",
+    var name: String = "",
     var email: String? = null,
     var phone: String? = null
 

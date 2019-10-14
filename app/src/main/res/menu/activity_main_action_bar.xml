@@ -7,6 +7,24 @@
         android:icon="@drawable/ic_theme_light_dark_24dp"
         android:orderInCategory="100"
         android:title="Switch Theme"
-        app:showAsAction="always" />
+        app:showAsAction="ifRoom" />
+
+    <item
+        android:id="@+id/action_sign_in"
+        android:orderInCategory="200"
+        android:title="Login"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_sign_out"
+        android:orderInCategory="300"
+        android:title="Logout"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_settings"
+        android:orderInCategory="400"
+        android:title="Settings"
+        app:showAsAction="never" />
 
 </menu>

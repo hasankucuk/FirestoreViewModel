@@ -3,8 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    tools:context=".MainActivity">
+    android:layout_height="match_parent">
 
     <com.google.android.material.appbar.AppBarLayout
         android:id="@+id/appBarLayout"
@@ -23,37 +22,40 @@
     </com.google.android.material.appbar.AppBarLayout>
 
     <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/layout_content"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:animateLayoutChanges="true"
-        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+        app:layout_behavior="@string/appbar_scrolling_view_behavior"
+        tools:ignore="MissingConstraints">
 
         <androidx.constraintlayout.helper.widget.Flow
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/medium"
+            android:layout_marginEnd="@dimen/medium"
             android:orientation="vertical"
-            app:constraint_referenced_ids="btn_open_user_list,btn_open_user_detail"
+            app:constraint_referenced_ids="tv_message,btn_action"
+            app:flow_verticalGap="@dimen/medium"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btn_open_user_list"
-            android:layout_width="@dimen/match_constraint"
-            android:layout_height="wrap_content"
-            app:layout_constraintStart_toStartOf="@+id/btn_open_user_detail"
-            app:layout_constraintEnd_toEndOf="@+id/btn_open_user_detail"
-            android:text="Open User List Activity"
-            tools:ignore="MissingConstraints" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btn_open_user_detail"
+        <TextView
+            android:id="@+id/tv_message"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Open User Detail Activity"
-            tools:ignore="MissingConstraints" />
+            android:gravity="center"
+            android:textAppearance="@style/TextAppearance.MaterialComponents.Headline5"
+            tools:text="Hello, Hafid!" />
 
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_action"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:visibility="invisible"
+            tools:text="Delete User Data" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

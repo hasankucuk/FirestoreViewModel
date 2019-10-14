@@ -1,25 +1,29 @@
 package io.github.achmadhafid.firestore_view_model.read
 
+import com.google.firebase.firestore.FirebaseFirestoreException
+
 sealed class ReadDocumentState<out T : Any>(internal val isSingleState: Boolean) {
 
     object Empty : ReadDocumentState<Nothing>(false)
 
     object OnProgress : ReadDocumentState<Nothing>(false)
 
-    class OnDataFound<T : Any>(
+    data class OnDataFound<out T : Any>(
         val value: T,
-        val isSignedIn: Boolean,
+        val isAuthenticated: Boolean,
         val isFromCache: Boolean = true,
         val hasPendingWrite: Boolean = false
     ) : ReadDocumentState<T>(false)
 
-    class OnDataNotFound(
-        val isSignedIn: Boolean,
+    data class OnDataNotFound(
+        val isAuthenticated: Boolean,
         val isFromCache: Boolean = true,
         val hasPendingWrite: Boolean = false
     ) : ReadDocumentState<Nothing>(false)
 
-    class OnError(val exception: ReadDocumentException) :
+    object OnOffline : ReadDocumentState<Nothing>(false)
+
+    data class OnError(val exception: FirebaseFirestoreException) :
         ReadDocumentState<Nothing>(true)
 
     companion object {
