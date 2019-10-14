@@ -68,15 +68,20 @@ fun <T : Any> QuerySnapshot.extracts(
 //region Internal Helper
 
 internal const val OFFLINE         = "No internet connection"
+internal const val TIMEOUT         = "Timeout"
 internal const val UNAUTHENTICATED = "Unauthenticated"
 
 internal val offlineException
     get() = FirebaseFirestoreException(OFFLINE, FirebaseFirestoreException.Code.UNKNOWN)
+internal val timeoutException
+    get() = FirebaseFirestoreException(TIMEOUT, FirebaseFirestoreException.Code.UNKNOWN)
 internal val unauthenticatedException
     get() = FirebaseFirestoreException(UNAUTHENTICATED, FirebaseFirestoreException.Code.UNAUTHENTICATED)
 
 val FirebaseFirestoreException.isOffline
     get() = code == FirebaseFirestoreException.Code.UNKNOWN && message == OFFLINE
+val FirebaseFirestoreException.isTimeout
+    get() = code == FirebaseFirestoreException.Code.UNKNOWN && message == TIMEOUT
 val FirebaseFirestoreException.isUnauthenticated
     get() = code == FirebaseFirestoreException.Code.UNAUTHENTICATED && message == UNAUTHENTICATED
 

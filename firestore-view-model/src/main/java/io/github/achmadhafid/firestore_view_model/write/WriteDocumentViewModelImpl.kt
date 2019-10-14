@@ -11,6 +11,7 @@ import io.github.achmadhafid.firestore_view_model.isSignedOut
 import io.github.achmadhafid.firestore_view_model.uid
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withTimeout
 
 internal class WriteDocumentViewModelImpl : BaseViewModel(), WriteDocumentViewModel {
 
@@ -41,7 +42,8 @@ internal class WriteDocumentViewModelImpl : BaseViewModel(), WriteDocumentViewMo
         requestCode: Int,
         data: T,
         collection: String,
-        requireOnline: Boolean
+        requireOnline: Boolean,
+        timeOut: Long
     ) {
         val event = registerWriteRequest(requestCode) as MutableLiveData<WriteDocumentEvent>
         if (event.value?.isInProgress == true) return
@@ -73,7 +75,8 @@ internal class WriteDocumentViewModelImpl : BaseViewModel(), WriteDocumentViewMo
         data: T,
         document: String,
         requireOnline: Boolean,
-        requireAuth: Boolean
+        requireAuth: Boolean,
+        timeOut: Long
     ) {
         val event = registerWriteRequest(requestCode) as MutableLiveData<WriteDocumentEvent>
         if (event.value?.isInProgress == true) return
@@ -85,9 +88,11 @@ internal class WriteDocumentViewModelImpl : BaseViewModel(), WriteDocumentViewMo
         } else {
             coroutineScope.launch {
                 runCatching {
-                    firestore.document(document)
-                        .set(data)
-                        .await()
+                    withTimeout(timeOut) {
+                        firestore.document(document)
+                            .set(data)
+                            .await()
+                    }
                 }.onSuccess {
                     event.postValue(getSuccessEvent(document))
                 }.onFailure {
@@ -104,7 +109,8 @@ internal class WriteDocumentViewModelImpl : BaseViewModel(), WriteDocumentViewMo
         data: T,
         collection: String,
         requireOnline: Boolean,
-        requireAuth: Boolean
+        requireAuth: Boolean,
+        timeOut: Long
     ) {
         val event = registerWriteRequest(requestCode) as MutableLiveData<WriteDocumentEvent>
         if (event.value?.isInProgress == true) return
@@ -116,9 +122,11 @@ internal class WriteDocumentViewModelImpl : BaseViewModel(), WriteDocumentViewMo
         } else {
             coroutineScope.launch {
                 runCatching {
-                    firestore.collection(collection)
-                        .add(data)
-                        .await()
+                    withTimeout(timeOut) {
+                        firestore.collection(collection)
+                            .add(data)
+                            .await()
+                    }
                 }.onSuccess {
                     event.postValue(getSuccessEvent(it.path))
                 }.onFailure {
@@ -133,7 +141,8 @@ internal class WriteDocumentViewModelImpl : BaseViewModel(), WriteDocumentViewMo
     override fun deleteDocument(
         requestCode: Int,
         collection: String,
-        requireOnline: Boolean
+        requireOnline: Boolean,
+        timeOut: Long
     ) {
         val event = registerWriteRequest(requestCode) as MutableLiveData<WriteDocumentEvent>
         if (event.value?.isInProgress == true) return
@@ -146,9 +155,11 @@ internal class WriteDocumentViewModelImpl : BaseViewModel(), WriteDocumentViewMo
             val document = "$collection/$uid"
             coroutineScope.launch {
                 runCatching {
-                    firestore.document(document)
-                        .delete()
-                        .await()
+                    withTimeout(timeOut) {
+                        firestore.document(document)
+                            .delete()
+                            .await()
+                    }
                 }.onSuccess {
                     event.postValue(getSuccessEvent(document))
                 }.onFailure {
@@ -164,7 +175,8 @@ internal class WriteDocumentViewModelImpl : BaseViewModel(), WriteDocumentViewMo
         requestCode: Int,
         document: String,
         requireOnline: Boolean,
-        requireAuth: Boolean
+        requireAuth: Boolean,
+        timeOut: Long
     ) {
         val event = registerWriteRequest(requestCode) as MutableLiveData<WriteDocumentEvent>
         if (event.value?.isInProgress == true) return
@@ -176,9 +188,11 @@ internal class WriteDocumentViewModelImpl : BaseViewModel(), WriteDocumentViewMo
         } else {
             coroutineScope.launch {
                 runCatching {
-                    firestore.document(document)
-                        .delete()
-                        .await()
+                    withTimeout(timeOut) {
+                        firestore.document(document)
+                            .delete()
+                            .await()
+                    }
                 }.onSuccess {
                     event.postValue(getSuccessEvent(document))
                 }.onFailure {

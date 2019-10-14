@@ -2,7 +2,9 @@ package io.github.achmadhafid.firestore_view_model.write
 
 import com.google.firebase.firestore.FirebaseFirestoreException
 import io.github.achmadhafid.firestore_view_model.offlineException
+import io.github.achmadhafid.firestore_view_model.timeoutException
 import io.github.achmadhafid.firestore_view_model.unauthenticatedException
+import kotlinx.coroutines.TimeoutCancellationException
 
 sealed class WriteDocumentState(internal val isSingleState: Boolean) {
 
@@ -38,6 +40,9 @@ internal val unauthenticatedExceptionEvent =
     WriteDocumentEvent(WriteDocumentState.OnFailed(unauthenticatedException))
 
 internal fun getErrorEvent(throwable: Throwable) = when (throwable) {
+    is TimeoutCancellationException -> WriteDocumentEvent(
+        WriteDocumentState.OnFailed(timeoutException)
+    )
     is FirebaseFirestoreException -> WriteDocumentEvent(
         WriteDocumentState.OnFailed(throwable)
     )

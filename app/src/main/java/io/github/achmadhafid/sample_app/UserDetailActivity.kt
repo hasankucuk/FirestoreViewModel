@@ -9,6 +9,7 @@ import com.google.android.material.button.MaterialButton
 import io.github.achmadhafid.firestore_view_model.FirestoreViewModel
 import io.github.achmadhafid.firestore_view_model.firestoreViewModel
 import io.github.achmadhafid.firestore_view_model.isOffline
+import io.github.achmadhafid.firestore_view_model.isTimeout
 import io.github.achmadhafid.firestore_view_model.isUnauthenticated
 import io.github.achmadhafid.firestore_view_model.read.ReadDocumentState
 import io.github.achmadhafid.firestore_view_model.read.getDocumentByAuthUid
@@ -155,6 +156,7 @@ class UserDetailActivity : BaseActivity(R.layout.activity_user_detail),
                     is WriteDocumentState.OnSuccess -> "Success, user data saved!"
                     is WriteDocumentState.OnFailed -> when {
                         state.exception.isOffline -> "Failed, no internet connection"
+                        state.exception.isTimeout -> "Timeout, please try again"
                         state.exception.isUnauthenticated -> "Please login first"
                         else -> "Failed, ${state.exception.message}"
                     }
@@ -170,6 +172,7 @@ class UserDetailActivity : BaseActivity(R.layout.activity_user_detail),
                     is WriteDocumentState.OnSuccess -> "Success, user data deleted!"
                     is WriteDocumentState.OnFailed -> when {
                         state.exception.isOffline -> "Failed, no internet connection"
+                        state.exception.isTimeout -> "Timeout, please try again"
                         state.exception.isUnauthenticated -> "Please login first"
                         else -> "Failed, ${state.exception.message}"
                     }
