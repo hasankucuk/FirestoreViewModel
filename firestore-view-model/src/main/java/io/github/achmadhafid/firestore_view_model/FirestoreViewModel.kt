@@ -17,6 +17,8 @@ import io.github.achmadhafid.firestore_view_model.read.ReadDocumentViewModelImpl
 import io.github.achmadhafid.firestore_view_model.write.WriteDocumentViewModel
 import io.github.achmadhafid.firestore_view_model.write.WriteDocumentViewModelImpl
 import io.github.achmadhafid.zpack.ktx.getViewModel
+import io.github.achmadhafid.zpack.ktx.getViewModelWithActivityScope
+import io.github.achmadhafid.zpack.ktx.getViewModelWithParentScope
 
 class FirestoreViewModel
 internal constructor(
@@ -114,6 +116,22 @@ fun <F> F.firestoreViewModel(): Lazy<FirestoreViewModel>
         where F : FirestoreViewModel.Extension, F : Fragment =
     lazy(LazyThreadSafetyMode.NONE) {
         getViewModel<FirestoreViewModel>(
+            FirestoreViewModelFactory(requireActivity().application)
+        )
+    }
+
+fun <F> F.firestoreViewModelWithActivityScope(): Lazy<FirestoreViewModel>
+        where F : FirestoreViewModel.Extension, F : Fragment =
+    lazy(LazyThreadSafetyMode.NONE) {
+        getViewModelWithActivityScope<FirestoreViewModel>(
+            FirestoreViewModelFactory(requireActivity().application)
+        )
+    }
+
+fun <F> F.firestoreViewModelWithParentScope(): Lazy<FirestoreViewModel>
+        where F : FirestoreViewModel.Extension, F : Fragment =
+    lazy(LazyThreadSafetyMode.NONE) {
+        getViewModelWithParentScope<FirestoreViewModel>(
             FirestoreViewModelFactory(requireActivity().application)
         )
     }
