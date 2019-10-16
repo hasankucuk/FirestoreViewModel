@@ -30,7 +30,7 @@ internal constructor(
     ReadDocumentViewModel by readDocumentViewModel,
     WriteDocumentViewModel by writeDocumentViewModel,
     QueryDocumentViewModel by queryDocumentViewModel {
-    
+
     //region Net
 
     private val networkCallback = object : ConnectivityManager.NetworkCallback() {
@@ -105,35 +105,23 @@ internal class FirestoreViewModelFactory(
 //region Consumer API view extension functions
 
 fun <A> A.firestoreViewModel(): Lazy<FirestoreViewModel>
-        where A : FirestoreViewModel.Extension, A : FragmentActivity =
+    where A : FirestoreViewModel.Extension, A : FragmentActivity =
     lazy(LazyThreadSafetyMode.NONE) {
         getViewModel<FirestoreViewModel>(
             FirestoreViewModelFactory(application)
         )
     }
 
-fun <F> F.firestoreViewModel(): Lazy<FirestoreViewModel>
-        where F : FirestoreViewModel.Extension, F : Fragment =
-    lazy(LazyThreadSafetyMode.NONE) {
-        getViewModel<FirestoreViewModel>(
-            FirestoreViewModelFactory(requireActivity().application)
-        )
-    }
+fun <F> F.firestoreViewModel(): FirestoreViewModel
+    where F : FirestoreViewModel.Extension, F : Fragment =
+    getViewModel(FirestoreViewModelFactory(requireActivity().application))
 
-fun <F> F.firestoreViewModelWithActivityScope(): Lazy<FirestoreViewModel>
-        where F : FirestoreViewModel.Extension, F : Fragment =
-    lazy(LazyThreadSafetyMode.NONE) {
-        getViewModelWithActivityScope<FirestoreViewModel>(
-            FirestoreViewModelFactory(requireActivity().application)
-        )
-    }
+fun <F> F.firestoreViewModelWithActivityScope(): FirestoreViewModel
+    where F : FirestoreViewModel.Extension, F : Fragment =
+    getViewModelWithActivityScope(FirestoreViewModelFactory(requireActivity().application))
 
-fun <F> F.firestoreViewModelWithParentScope(): Lazy<FirestoreViewModel>
-        where F : FirestoreViewModel.Extension, F : Fragment =
-    lazy(LazyThreadSafetyMode.NONE) {
-        getViewModelWithParentScope<FirestoreViewModel>(
-            FirestoreViewModelFactory(requireActivity().application)
-        )
-    }
+fun <F> F.firestoreViewModelWithParentScope(): FirestoreViewModel
+    where F : FirestoreViewModel.Extension, F : Fragment =
+    getViewModelWithParentScope(FirestoreViewModelFactory(requireActivity().application))
 
 //endregion
