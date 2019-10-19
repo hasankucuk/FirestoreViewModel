@@ -101,7 +101,6 @@ internal class FirestoreViewModelFactory(
 
 //endregion
 
-
 //region Consumer API view extension functions
 
 fun <A> A.firestoreViewModel(): Lazy<FirestoreViewModel>

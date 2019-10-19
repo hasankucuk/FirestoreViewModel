@@ -24,14 +24,19 @@ inline val DocumentSnapshot.isSynced
 inline val QuerySnapshot.isSynced
     get() = !isFromCache && !hasPendingWrites
 
-inline fun <reified T : Any> DocumentSnapshot.of(objectBuilder: T.(DocumentSnapshot) -> Unit): T? =
-    toObject(T::class.java)?.apply { objectBuilder(this@of) }
+inline fun <reified T : Any> DocumentSnapshot.of(objectBuilder: T.(DocumentSnapshot) -> Unit): T =
+    toObject(T::class.java)?.apply { objectBuilder(this@of) } ?: TODO("Error de-serialize firestore snapshot")
 
-inline fun <reified T : Any> List<DocumentSnapshot>.of(objectBuilder: T.(DocumentSnapshot) -> Unit): List<T?> =
+inline fun <reified T : Any> List<DocumentSnapshot>.of(objectBuilder: T.(DocumentSnapshot) -> Unit): List<T> =
     map { it.of(objectBuilder) }
 
-fun <T : Any> List<DocumentSnapshot>.of(clazz: Class<T>, objectBuilder: T.(DocumentSnapshot) -> Unit): List<T?> =
-    map { snapshot -> snapshot.toObject(clazz)?.apply { objectBuilder(snapshot) } }
+fun <T : Any> List<DocumentSnapshot>.of(
+    clazz: Class<T>,
+    objectBuilder: T.(DocumentSnapshot) -> Unit
+): List<T> =
+    map { snapshot -> snapshot.toObject(clazz)?.apply { objectBuilder(snapshot) }
+        ?: TODO("Error de-serialize firestore snapshot")
+    }
 
 inline fun <reified T : Any> DocumentChange.of(noinline objectBuilder: T.(DocumentSnapshot) -> Unit): T =
     of(T::class, objectBuilder)
@@ -48,16 +53,16 @@ fun <T : Any> QuerySnapshot.extracts(
     objectBuilder: T.(DocumentSnapshot) -> Unit
 ): Triple<List<T>, List<T>, List<T>> {
 
-    val addedList    = mutableListOf<T>()
+    val addedList = mutableListOf<T>()
     val modifiedList = mutableListOf<T>()
-    val deletedList  = mutableListOf<T>()
+    val deletedList = mutableListOf<T>()
 
     documentChanges.forEach { change ->
         with(change.of(clazz, objectBuilder)) {
             when (change.type) {
-                DocumentChange.Type.ADDED    -> addedList.add(this)
+                DocumentChange.Type.ADDED -> addedList.add(this)
                 DocumentChange.Type.MODIFIED -> modifiedList.add(this)
-                DocumentChange.Type.REMOVED  -> deletedList.add(this)
+                DocumentChange.Type.REMOVED -> deletedList.add(this)
             }
         }
     }
@@ -67,8 +72,8 @@ fun <T : Any> QuerySnapshot.extracts(
 
 //region Internal Helper
 
-internal const val OFFLINE         = "No internet connection"
-internal const val TIMEOUT         = "Timeout"
+internal const val OFFLINE = "No internet connection"
+internal const val TIMEOUT = "Timeout"
 internal const val UNAUTHENTICATED = "Unauthenticated"
 
 internal val offlineException
@@ -76,7 +81,10 @@ internal val offlineException
 internal val timeoutException
     get() = FirebaseFirestoreException(TIMEOUT, FirebaseFirestoreException.Code.UNKNOWN)
 internal val unauthenticatedException
-    get() = FirebaseFirestoreException(UNAUTHENTICATED, FirebaseFirestoreException.Code.UNAUTHENTICATED)
+    get() = FirebaseFirestoreException(
+        UNAUTHENTICATED,
+        FirebaseFirestoreException.Code.UNAUTHENTICATED
+    )
 
 val FirebaseFirestoreException.isOffline
     get() = code == FirebaseFirestoreException.Code.UNKNOWN && message == OFFLINE

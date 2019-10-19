@@ -6,15 +6,21 @@ import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.observe
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+import com.google.firebase.firestore.Query
 import io.github.achmadhafid.firestore_view_model.FirestoreViewModel
 import io.github.achmadhafid.firestore_view_model.firestoreViewModel
+import io.github.achmadhafid.firestore_view_model.query.QueryDocumentException
 import io.github.achmadhafid.firestore_view_model.query.QueryDocumentState
 import io.github.achmadhafid.firestore_view_model.query.registerQueryRequest
 import io.github.achmadhafid.firestore_view_model.query.withDataBuilder
+import io.github.achmadhafid.firestore_view_model.query.withQuery
+import io.github.achmadhafid.firestore_view_model.query.withViewState
 import io.github.achmadhafid.sample_app.entity.User
 import io.github.achmadhafid.simplepref.SimplePref
 import io.github.achmadhafid.simplepref.simplePref
 import io.github.achmadhafid.zpack.ktx.bindView
+import io.github.achmadhafid.zpack.ktx.onSingleClick
 import io.github.achmadhafid.zpack.ktx.setMaterialToolbar
 import io.github.achmadhafid.zpack.ktx.toastShort
 
@@ -30,6 +36,7 @@ class UserListActivity : BaseActivity(R.layout.activity_user_list),
     //endregion
     //region View
 
+    private val fab: ExtendedFloatingActionButton by bindView(R.id.fab)
     private val recyclerView: RecyclerView by bindView(R.id.recycler_view)
 
     //endregion
@@ -59,6 +66,23 @@ class UserListActivity : BaseActivity(R.layout.activity_user_list),
         recyclerView.adapter       = listAdapter
 
         //endregion
+        //region setup fab
+
+        fab.onSingleClick {
+            val viewState: Map<String, Query.Direction>? = viewModel.getQueryViewState(RC_QUERY)
+            viewState?.let {
+                if (it["name"] == Query.Direction.DESCENDING) {
+                    val newViewState = mapOf("name" to Query.Direction.ASCENDING)
+                    viewModel.changeQuery(RC_QUERY, newViewState) {
+                        orderBy("name", Query.Direction.ASCENDING)
+                    }
+                } else {
+                    viewModel.resetQuery(RC_QUERY)
+                }
+            }
+        }
+
+        //endregion
         //region Observe user listing query
 
         viewModel.registerQueryRequest<User>(RC_QUERY) {
@@ -66,16 +90,38 @@ class UserListActivity : BaseActivity(R.layout.activity_user_list),
             requireAuth   = this@UserListActivity.requireAuth
             requireOnline = this@UserListActivity.requireOnline
             syncWait      = this@UserListActivity.syncWait
+            withQuery {
+                orderBy("name", Query.Direction.DESCENDING)
+            }
+            withViewState {
+                mapOf("name" to Query.Direction.DESCENDING)
+            }
             withDataBuilder { snapshot ->
                 id = snapshot.id
             }
-        }.observe(this) {
-            when (val state = it.getState()) {
-                QueryDocumentState.OnProgress        -> toastShort("Please wait")
-                QueryDocumentState.OnOffline         -> toastShort("Error, No internet connection")
-                is QueryDocumentState.OnError        -> toastShort("Error, ${state.exception.message}")
-                is QueryDocumentState.OnDataNotFound -> toastShort("User not found")
-                is QueryDocumentState.OnDataFound    -> listAdapter.submitList(state.values)
+        }.observe(this) { event ->
+            when (val state = event.getState()) {
+                QueryDocumentState.OnLoading    -> {
+                    toastShort("Please wait")
+                    listAdapter.submitList(emptyList())
+                    fab.hide()
+                }
+                is QueryDocumentState.OnSuccess -> {
+                    listAdapter.submitList(state.values)
+                    fab.show()
+                }
+                is QueryDocumentState.OnFailed  -> {
+                    val message = if (event.hasBeenConsumed(localClassName)) {
+                        "(has been handled)"
+                    } else when (val error = state.exception) {
+                        QueryDocumentException.Offline -> "No internet connection"
+                        QueryDocumentException.Unauthenticated -> "Please login first"
+                        is QueryDocumentException.FirestoreException -> error.firestoreException.message
+                    }
+                    toastShort("Error: $message")
+                    listAdapter.submitList(emptyList())
+                    fab.hide()
+                }
             }
         }
 
@@ -106,5 +152,3 @@ class UserListActivity : BaseActivity(R.layout.activity_user_list),
 }
 
 private const val RC_QUERY = 5000
-
-//TODO("Extract bug")

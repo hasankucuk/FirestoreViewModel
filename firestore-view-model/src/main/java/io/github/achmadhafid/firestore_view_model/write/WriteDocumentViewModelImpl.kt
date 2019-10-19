@@ -5,10 +5,12 @@ package io.github.achmadhafid.firestore_view_model.write
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.google.firebase.auth.FirebaseUser
+import com.google.firebase.firestore.FirebaseFirestoreException
 import io.github.achmadhafid.firestore_view_model.BaseViewModel
 import io.github.achmadhafid.firestore_view_model.firestore
 import io.github.achmadhafid.firestore_view_model.isSignedOut
 import io.github.achmadhafid.firestore_view_model.uid
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withTimeout
@@ -66,7 +68,7 @@ internal class WriteDocumentViewModelImpl : BaseViewModel(), WriteDocumentViewMo
                 }
             }
 
-            event.value = onProgressEvent(isConnected())
+            event.value = onProgressEvent
         }
     }
 
@@ -100,7 +102,7 @@ internal class WriteDocumentViewModelImpl : BaseViewModel(), WriteDocumentViewMo
                 }
             }
 
-            event.value = onProgressEvent(isConnected())
+            event.value = onProgressEvent
         }
     }
 
@@ -134,7 +136,7 @@ internal class WriteDocumentViewModelImpl : BaseViewModel(), WriteDocumentViewMo
                 }
             }
 
-            event.value = onProgressEvent(isConnected())
+            event.value = onProgressEvent
         }
     }
 
@@ -167,7 +169,7 @@ internal class WriteDocumentViewModelImpl : BaseViewModel(), WriteDocumentViewMo
                 }
             }
 
-            event.value = onProgressEvent(isConnected())
+            event.value = onProgressEvent
         }
     }
 
@@ -200,10 +202,46 @@ internal class WriteDocumentViewModelImpl : BaseViewModel(), WriteDocumentViewMo
                 }
             }
 
-            event.value = onProgressEvent(isConnected())
+            event.value = onProgressEvent
         }
     }
 
     //endregion
 
 }
+
+//region Helper for WriteDocumentEvent
+
+private val WriteDocumentEvent.isInProgress
+    get() = getState() is WriteDocumentState.OnProgress
+
+private val onProgressEvent =
+    WriteDocumentEvent(WriteDocumentState.OnProgress)
+
+private val offlineExceptionEvent =
+    WriteDocumentEvent(WriteDocumentState.OnFailed(WriteDocumentException.Offline))
+
+private val timeoutExceptionEvent =
+    WriteDocumentEvent(WriteDocumentState.OnFailed(WriteDocumentException.Timeout))
+
+private val unauthenticatedExceptionEvent =
+    WriteDocumentEvent(WriteDocumentState.OnFailed(WriteDocumentException.Unauthenticated))
+
+private fun getSuccessEvent(documentPath: String) =
+    WriteDocumentEvent(WriteDocumentState.OnSuccess(documentPath))
+
+private fun getErrorEvent(throwable: Throwable): WriteDocumentEvent = when (throwable) {
+    is TimeoutCancellationException -> timeoutExceptionEvent
+    is FirebaseFirestoreException -> WriteDocumentEvent(
+        WriteDocumentState.OnFailed(WriteDocumentException.FirestoreException(throwable))
+    )
+    else -> getErrorEvent(
+        FirebaseFirestoreException(
+            "Unknown error",
+            FirebaseFirestoreException.Code.UNKNOWN,
+            throwable
+        )
+    )
+}
+
+//endregion

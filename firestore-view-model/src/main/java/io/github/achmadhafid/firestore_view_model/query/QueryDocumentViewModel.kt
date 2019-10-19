@@ -6,12 +6,13 @@ import com.google.firebase.firestore.Query
 
 interface QueryDocumentViewModel {
 
-    fun <T : Any> registerQueryRequest(
-        config: QueryDocumentConfig<T>,
-        overrideIfExist: Boolean
-    ): LiveData<QueryDocumentEvent<T>>
+    fun <T : Any> registerQueryRequest(config: QueryDocumentConfig<T>): LiveData<QueryDocumentEvent<T>>
 
-    fun changeQuery(requestCode: Int, viewState: Any? = null, query: CollectionReference.() -> Query)
+    fun changeQuery(
+        requestCode: Int,
+        viewState: Any? = null,
+        query: CollectionReference.() -> Query
+    )
 
     fun resetQuery(requestCode: Int)
 
@@ -24,10 +25,9 @@ interface QueryDocumentViewModel {
 
 inline fun <reified T : Any> QueryDocumentViewModel.registerQueryRequest(
     requestCode: Int,
-    overrideIfExist: Boolean = false,
     builder: QueryDocumentConfig<T>.() -> Unit
 ): LiveData<QueryDocumentEvent<T>> = registerQueryRequest(
-    QueryDocumentConfig(requestCode, T::class).apply(builder), overrideIfExist
+    QueryDocumentConfig(requestCode, T::class).apply(builder)
 )
 
 //endregion

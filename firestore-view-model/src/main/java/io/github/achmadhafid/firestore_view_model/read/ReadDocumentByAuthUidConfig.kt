@@ -8,7 +8,7 @@ data class ReadDocumentByAuthUidConfig<T : Any>(
     var collection: String? = null,
     var requireOnline: Boolean = false,
     var syncWait: Long = 0L,
-    var dataBuilder: T.(DocumentSnapshot) -> Unit = {}
+    internal var dataBuilder: T.(DocumentSnapshot) -> Unit = {}
 )
 
 fun <T : Any> ReadDocumentByAuthUidConfig<T>.withDataBuilder(builder: T.(DocumentSnapshot) -> Unit) {

@@ -39,6 +39,7 @@ abstract class BaseActivity(@LayoutRes layout: Int) : AppCompatActivity(layout),
     //endregion
     //region Lifecycle Callback
 
+    @Suppress("ComplexMethod")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         //region observe auth state

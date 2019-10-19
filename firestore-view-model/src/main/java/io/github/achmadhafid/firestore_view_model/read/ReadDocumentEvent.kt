@@ -2,15 +2,20 @@ package io.github.achmadhafid.firestore_view_model.read
 
 class ReadDocumentEvent<out T : Any>(private val state: ReadDocumentState<T>) {
 
-    private var hasBeenConsumed = false
+    private var consumers = mutableMapOf<Int, Boolean>()
 
-    fun getState(ignoreSingleStateIfHasBeenConsumed: Boolean = true): ReadDocumentState<T> =
-        if (state.isSingleState) {
-            if (hasBeenConsumed && ignoreSingleStateIfHasBeenConsumed) ReadDocumentState.transientState
-            else {
-                hasBeenConsumed = true
-                state
-            }
-        } else state
+    fun getState(id: Int? = null): ReadDocumentState<T> {
+        id?.let {
+            if (consumers[id] == null) consumers[id] = false
+            else if (consumers[id] == false) consumers[id] = true
+        }
+        return state
+    }
+
+    fun getState(id: String?): ReadDocumentState<T> = getState(id?.hashCode())
+
+    fun hasBeenConsumed(id: Int) = consumers[id] ?: false
+
+    fun hasBeenConsumed(id: String) = hasBeenConsumed(id.hashCode())
 
 }

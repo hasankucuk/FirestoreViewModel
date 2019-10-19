@@ -8,7 +8,6 @@ import androidx.lifecycle.map
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.EventListener
-import com.google.firebase.firestore.FirebaseFirestoreException
 import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.MetadataChanges
 import com.google.firebase.firestore.Query
@@ -18,13 +17,9 @@ import io.github.achmadhafid.firestore_view_model.extracts
 import io.github.achmadhafid.firestore_view_model.firestore
 import io.github.achmadhafid.firestore_view_model.hasPendingWrites
 import io.github.achmadhafid.firestore_view_model.isFromCache
-import io.github.achmadhafid.firestore_view_model.isOffline
-import io.github.achmadhafid.firestore_view_model.isSignedIn
 import io.github.achmadhafid.firestore_view_model.isSignedOut
 import io.github.achmadhafid.firestore_view_model.isSynced
 import io.github.achmadhafid.firestore_view_model.of
-import io.github.achmadhafid.firestore_view_model.offlineException
-import io.github.achmadhafid.firestore_view_model.unauthenticatedException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -32,6 +27,7 @@ internal class QueryDocumentViewModelImpl : BaseViewModel(), QueryDocumentViewMo
 
     private val configs    = mutableMapOf<Int, QueryDocumentConfig<*>>()
     private val documents  = mutableMapOf<Int, QueryDocumentData>()
+    private val events     = mutableMapOf<Int, LiveData<QueryDocumentEvent<*>>>()
     private val timestamps = mutableMapOf<Int, Long>()
     private val listeners  = mutableMapOf<Int, ListenerRegistration>()
 
@@ -63,56 +59,56 @@ internal class QueryDocumentViewModelImpl : BaseViewModel(), QueryDocumentViewMo
         listeners.values.forEach { it.remove() }
         listeners.clear()
         documents.clear()
+        events.clear()
         configs.clear()
+        timestamps.clear()
     }
 
     //region Main API
 
+    @Suppress("UNCHECKED_CAST")
     override fun <T : Any> registerQueryRequest(
-        config: QueryDocumentConfig<T>,
-        overrideIfExist: Boolean
+        config: QueryDocumentConfig<T>
     ): LiveData<QueryDocumentEvent<T>> {
-        addConfig(config, overrideIfExist)
-        return documents[config.requestCode]!!.map { (snapshot, exception) ->
-            val state = exception?.let {
-                if (it.isOffline) QueryDocumentState.OnOffline
-                else QueryDocumentState.OnError(it)
-            } ?: snapshot?.let {
-                if (!it.isEmpty) {
-                    val documents = snapshot.documents.of(config.clazz.java, config.dataBuilder)
-                    val result = snapshot.extracts(config.clazz, config.dataBuilder)
-                    QueryDocumentState.OnDataFound(
-                        documents,
-                        result.first, result.second, result.third,
-                        isSignedIn,
-                        snapshot.isFromCache,
-                        snapshot.hasPendingWrites
-                    )
-                } else {
-                    QueryDocumentState.OnDataNotFound(
-                        isSignedIn,
-                        snapshot.isFromCache,
-                        snapshot.hasPendingWrites
-                    )
-                }
-            }
-            QueryDocumentEvent(state!!)
+        if (!events.containsKey(config.requestCode)) {
+            events[config.requestCode] =
+                addConfig(config).map { (snapshot, exception) ->
+                    val state = exception?.let {
+                        QueryDocumentState.OnFailed(it)
+                    } ?: snapshot?.let {
+
+                        val documents = if (it.isEmpty) emptyList()
+                        else it.documents.of(config.clazz.java, config.dataBuilder)
+                        val result = if (it.isEmpty) Triple(emptyList(), emptyList(), emptyList())
+                        else it.extracts(config.clazz, config.dataBuilder)
+
+                        QueryDocumentState.OnSuccess(
+                            documents,
+                            result.first, result.second, result.third,
+                            it.isFromCache,
+                            it.hasPendingWrites
+                        )
+                    } ?: QueryDocumentState.OnLoading
+                    QueryDocumentEvent(state)
+                } as LiveData<QueryDocumentEvent<*>>
         }
+        return events[config.requestCode]!! as LiveData<QueryDocumentEvent<T>>
     }
 
     override fun changeQuery(requestCode: Int, viewState: Any?, query: CollectionReference.() -> Query) {
         configs[requestCode]?.let {
-            it.currentQuery = query
+            it.currentQuery     = query
             it.currentViewState = viewState
-            addConfig(it, true)
-        } ?: throw IllegalStateException("Query with request code $requestCode not found")
+            attachListener(it)
+        } ?: throw IllegalStateException("Query with request code `$requestCode` is not found")
     }
 
     override fun resetQuery(requestCode: Int) {
         configs[requestCode]?.let {
-            it.currentQuery = it.defaultQuery
-            addConfig(it, true)
-        } ?: throw IllegalStateException("Query with request code $requestCode not found")
+            it.currentQuery     = it.defaultQuery
+            it.currentViewState = it.defaultViewState
+            attachListener(it)
+        } ?: throw IllegalStateException("Query with request code `$requestCode` is not found")
     }
 
     @Suppress("UNCHECKED_CAST")
@@ -122,21 +118,22 @@ internal class QueryDocumentViewModelImpl : BaseViewModel(), QueryDocumentViewMo
     //endregion
     //region Private Helper
 
-    private fun addConfig(config: QueryDocumentConfig<*>, overrideIfExist: Boolean) {
-        if (!documents.containsKey(config.requestCode) || overrideIfExist) {
+    private fun addConfig(config: QueryDocumentConfig<*>): QueryDocumentData {
+        if (!documents.containsKey(config.requestCode)) {
             configs[config.requestCode] = config
             documents[config.requestCode] = MutableLiveData()
             attachListener(config)
         }
+        return documents[config.requestCode]!!
     }
 
     @Suppress("ComplexMethod")
     private fun attachListener(config: QueryDocumentConfig<*>) {
         fun isConstraintFulfilled() = if (config.requireOnline && !isConnected()) {
-            updateSnapshot(config, null, offlineException)
+            updateSnapshot(config, null, QueryDocumentException.Offline)
             false
         } else if (config.requireAuth && isSignedOut) {
-            updateSnapshot(config, null, unauthenticatedException)
+            updateSnapshot(config, null, QueryDocumentException.Unauthenticated)
             false
         } else {
             true
@@ -150,12 +147,16 @@ internal class QueryDocumentViewModelImpl : BaseViewModel(), QueryDocumentViewMo
                 if (!isConstraintFulfilled()) {
                     return@EventListener
                 } else if (snapshot?.isSynced == true || config.syncWait <= 0L || !isConnected()) {
-                    updateSnapshot(config, snapshot, exception)
+                    updateSnapshot(config, snapshot, exception?.let {
+                        QueryDocumentException.FirestoreException(it)
+                    })
                 } else {
                     coroutineScope.launch {
                         val timestamp = System.currentTimeMillis()
                         delay(config.syncWait)
-                        updateSnapshot(config, snapshot, exception, timestamp)
+                        updateSnapshot(config, snapshot, exception?.let {
+                            QueryDocumentException.FirestoreException(it)
+                        }, timestamp)
                     }
                 }
             }
@@ -168,20 +169,24 @@ internal class QueryDocumentViewModelImpl : BaseViewModel(), QueryDocumentViewMo
         } ?: throw IllegalStateException("Collection must be set")
 
         /* immediately check constraint */
-        isConstraintFulfilled()
+        if (isConstraintFulfilled())
+            /* emit OnLoading state */
+            updateSnapshot(config, null, null)
     }
 
     private fun updateSnapshot(
         config: QueryDocumentConfig<*>,
         snapshot: QuerySnapshot? = null,
-        exception: FirebaseFirestoreException? = null,
+        exception: QueryDocumentException? = null,
         timestamp: Long = System.currentTimeMillis()
     ) {
         if (!timestamps.contains(config.requestCode) || timestamps[config.requestCode]!! < timestamp) {
             timestamps[config.requestCode] = timestamp
             //region avoid double error update
             exception?.let {
-                documents[config.requestCode]?.value?.second?.let { return@updateSnapshot }
+                if (documents[config.requestCode]?.value?.second == it) {
+                    return@updateSnapshot
+                }
             }
             //endregion
             documents[config.requestCode]?.postValue(snapshot to exception)
@@ -192,4 +197,4 @@ internal class QueryDocumentViewModelImpl : BaseViewModel(), QueryDocumentViewMo
 
 }
 
-private typealias QueryDocumentData = MutableLiveData<Pair<QuerySnapshot?, FirebaseFirestoreException?>>
+private typealias QueryDocumentData = MutableLiveData<Pair<QuerySnapshot?, QueryDocumentException?>>
